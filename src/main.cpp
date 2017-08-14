@@ -91,6 +91,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double steer_value = j[1]["steering_angle"];
+          double throttle_value = j[1]["throttle"];
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -98,8 +100,41 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+          Eigen::VectorXd translated_ptsx(ptsx.size());
+          Eigen::VectorXd translated_ptsy(ptsy.size());
+          
+          for (int i = 0; i < ptsx.size(); i++) {
+            double diff_x = ptsx[i] - px;
+            double diff_y = ptsy[i] - py;
+            translated_ptsx[i] = diff_x * cos(-psi) - diff_y * sin(-psi);
+            translated_ptsy[i] = diff_x * sin(-psi) + diff_y * cos(-psi);
+          }
+
+          auto coeffs = polyfit(translated_ptsx, translated_ptsy, 3);
+
+          double cte = polyeval(coeffs, 0);
+          double epsi = -atan(coeffs[1]);
+          //AD<double> epsi = -atan(coeffs[1] + 2.0 * coeffs[2] * x0 + 3.0 * coeffs[3] * x0 * x0);
+
+          double delay = 0.1;
+          double Lf = 2.67;
+
+          double delay_x = v * delay;
+          double delay_y = 0;
+          double delay_psi = -v * steer_value / Lf * delay;
+          double delay_v = v + throttle_value * delay;
+          double delay_cte = cte + v * sin(epsi) * delay;
+          double delay_epsi = epsi - v + steer_value / Lf * delay;
+
+          Eigen::VectorXd state(6);
+          state << delay_x, delay_y, delay_psi, delay_v, delay_cte, delay_epsi;
+
+          auto outputs = mpc.Solve(state, coeffs);
+
+          //double steer_value = outputs[6];
+          //double throttle_value = outputs[7];
+          steer_value = outputs[6];
+          throttle_value = outputs[7];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -107,7 +142,7 @@ int main() {
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 
-          //Display the MPC predicted trajectory 
+          //Display the MPC predicted trajectory
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
