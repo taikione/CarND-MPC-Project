@@ -102,7 +102,7 @@ int main() {
           */
           Eigen::VectorXd translated_ptsx(ptsx.size());
           Eigen::VectorXd translated_ptsy(ptsy.size());
-          
+
           for (int i = 0; i < ptsx.size(); i++) {
             double diff_x = ptsx[i] - px;
             double diff_y = ptsy[i] - py;
@@ -116,7 +116,7 @@ int main() {
           double epsi = -atan(coeffs[1]);
           //AD<double> epsi = -atan(coeffs[1] + 2.0 * coeffs[2] * x0 + 3.0 * coeffs[3] * x0 * x0);
 
-          double delay = 0.1;
+          double delay = 0.05;
           double Lf = 2.67;
 
           double delay_x = v * delay;

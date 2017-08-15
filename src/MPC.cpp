@@ -9,7 +9,7 @@ using CppAD::AD;
 size_t N = 10;
 double dt = 0.1;
 
-double ref_v = 100;
+double ref_v = 50;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
