@@ -9,7 +9,7 @@ using CppAD::AD;
 size_t N = 10;
 double dt = 0.1;
 
-double ref_v = 50;
+double ref_v = 50; // 50mph = 80kmph
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -52,17 +52,16 @@ class FG_eval {
       fg[0] += CppAD::pow(vars[cte_start + t], 2);
       fg[0] += CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
-    }
-
-    for (int t=0; t<N-1; t++) {
       fg[0] += CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start+ t], 2);
+      // Multiply 5 for smooth acceleration
+      fg[0] += 5 * CppAD::pow(vars[a_start+ t], 2);
     }
 
-    for (int t=0; t<N-2; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t+1] - vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t+1] - vars[a_start + t], 2);
-    }
+    // Following costs are not used in this project. (Driving did not change even if I user following costs)
+    //for (int t=0; t<N-2; t++) {
+    //  fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+    //  fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+    //}
 
     //fg[1] ~ fg[end] are constraints represents each parameter.
     fg[1 + x_start] = vars[x_start];
@@ -84,7 +83,6 @@ class FG_eval {
       AD<double> y0 = vars[y_start + t - 1];
       AD<double> psi0 = vars[psi_start + t - 1];
       AD<double> v0 = vars[v_start + t - 1];
-      AD<double> cte0 = vars[cte_start + t - 1];
       AD<double> epsi0 = vars[epsi_start + t - 1];
 
       AD<double> delta0 = vars[delta_start + t - 1];
@@ -156,7 +154,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 1.0e19;
   }
 
-  // delta
+  // delta rad2deg(0.436332) = 25
   for (int i = delta_start; i < a_start; i++) {
     vars_lowerbound[i] = -0.436332;
     vars_upperbound[i] = 0.43632;
@@ -232,8 +230,22 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
-  return {solution.x[x_start + 1],   solution.x[y_start + 1],
-          solution.x[psi_start + 1], solution.x[v_start + 1],
-          solution.x[cte_start + 1], solution.x[epsi_start + 1],
-          solution.x[delta_start],   solution.x[a_start]};
+  vector<double> solution_vector;
+  solution_vector.push_back(solution.x[delta_start]);
+  solution_vector.push_back(solution.x[a_start]);
+
+  for (int i = 0; i < N; ++i) {
+    solution_vector.push_back(solution.x[x_start + 1 + i]);
+  }
+
+  for (int i = 0; i < N; ++i) {
+    solution_vector.push_back(solution.x[y_start + 1 + i]);
+  }
+
+  return solution_vector;
+
+  //return {solution.x[x_start + 1],   solution.x[y_start + 1],
+  //        solution.x[psi_start + 1], solution.x[v_start + 1],
+  //        solution.x[cte_start + 1], solution.x[epsi_start + 1],
+  //        solution.x[delta_start],   solution.x[a_start]};
 }
