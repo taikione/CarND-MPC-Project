@@ -113,10 +113,10 @@ int main() {
           auto coeffs = polyfit(translated_ptsx, translated_ptsy, 3);
 
           double cte = polyeval(coeffs, 0);
+          //double epsi = -atan(coeffs[1] + 2.0 * coeffs[2] * 0 + 3.0 * coeffs[3] * 0 * 0);
           double epsi = -atan(coeffs[1]);
-          //AD<double> epsi = -atan(coeffs[1] + 2.0 * coeffs[2] * x0 + 3.0 * coeffs[3] * x0 * x0);
 
-          double delay = 0.05;
+          double delay = 0.1;
           double Lf = 2.67;
 
           double delay_x = v * delay;
@@ -166,7 +166,6 @@ int main() {
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
