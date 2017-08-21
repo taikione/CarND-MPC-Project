@@ -52,3 +52,16 @@ dt = 0.1
 # MPC Preprocessing
 All the input to `MPC::Solve()` was transformed into the vehicle orientation and coordinate. The vehicle orientation was set to be `(x, y, psi)` = `(0, 0, 0)`.
 
+# Model Predictive Control with latency
+In handling 100 milliseconds latency, I was used the following equations.
+```
+delay x = v * delay;
+delay y = 0;
+delay psi = -v * steer_value / Lf * delay;
+delay v = v + throttle_value * delay;
+delay cte = cte + v * sin(epsi) * delay;
+delay epsi = epsi - v + steer_value / Lf * delay;
+```
+These operations are executed in `L122-127` of `Main.cpp`.
+This latency is the time between sending control values from MPC and receiving the vehicle, so to correctly and safe driving, I need to predict the future state by this delay.
+When I try to set the latency to 0 seconds, driving was unstable.  If the velocity goes up keeping latency is 0, it will be a very dangerous driving. For stable driving, latency is very important.
